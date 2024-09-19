@@ -1,5 +1,9 @@
 # Forensic Timeline
 
+## Live Demo
+
+[Click here to view the live demo](https://tylermaginnis.github.io/SimpleForensicTimeline/)
+
 ## Overview
 
 The Forensic Timeline project is a web application designed to visualize file events over time. It processes file metadata and events, allowing users to see when files were created, modified, accessed, and processed. The application utilizes D3.js for data visualization and supports light and dark themes.
@@ -13,7 +17,7 @@ The Forensic Timeline project is a web application designed to visualize file ev
 
 ## Technologies Used
 
-- **Frontend**: HTML, CSS, JavaScript, D3.js
+- **Frontend**: HTML, CSS, JavaScript
 - **Backend**: ASP.NET Core (C#)
 - **Data Format**: JSON for file events
 
