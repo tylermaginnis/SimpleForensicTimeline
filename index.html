@@ -28,6 +28,7 @@
 
         h1 {
             text-align: center;
+            font-size: 1.5em; /* Responsive font size */
         }
 
         #timeline {
@@ -44,9 +45,9 @@
             margin-bottom: 30px;
             cursor: pointer;
             padding: 10px 20px;
-            width: 40%; /* Set default width */
-            left: -50%; /* Center events */
-            transform: translateX(-50%);
+            width: 90%; /* Increased width for mobile */
+            left: 0; /* Center events */
+            transform: translateX(0);
         }
 
         .event::before {
@@ -73,11 +74,7 @@
             font-size: 1.2em;
         }
 
-        .left-event {
-            text-align: left;
-        }
-
-        .right-event {
+        .left-event, .right-event {
             text-align: left;
         }
 
@@ -87,6 +84,7 @@
             right: 20px;
             display: flex;
             align-items: center;
+            z-index: 10; /* Ensure toggle is above other elements */
         }
 
         .switch {
@@ -154,7 +152,7 @@
             margin: 5% auto;
             padding: 20px;
             border: 1px solid #888;
-            width: 80%;
+            width: 90%; /* Increased width for mobile */
             max-width: 600px;
             border-radius: 10px;
         }
@@ -171,6 +169,21 @@
             color: #000;
             text-decoration: none;
             cursor: pointer;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.2em; /* Smaller font size for mobile */
+            }
+
+            .event {
+                width: 95%; /* Full width on mobile */
+            }
+
+            .modal-content {
+                width: 95%; /* Full width on mobile */
+            }
         }
     </style>
 </head>
