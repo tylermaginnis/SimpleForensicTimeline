@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Forensic Timeline</title>
+    <!-- Include D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- Include a toggle switch library (optional) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
+    <style type="text/css">
+        /* Define CSS variables for themes */
+        :root {
+            --background-color: #ffffff;
+            --text-color: #000000;
+            --timeline-color: #1f77b4; /* Blue */
+            --event-color: #ff7f0e; /* Orange */
+        }
+
+        [data-theme="dark"] {
+            --background-color: #121212;
+            --text-color: #ffffff;
+            --timeline-color: #aec7e8; /* Light Blue */
+            --event-color: #ffbb78; /* Light Orange */
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #timeline {
+            margin-top: 40px;
+        }
+
+        /* Toggle Switch Styles */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin-right: 10px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Responsive SVG */
+        svg {
+            width: 100%;
+            height: 600px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="theme-toggle">
+        <label class="switch">
+            <input type="checkbox" id="theme-switch">
+            <span class="slider round"></span>
+        </label>
+        <span id="theme-label">Light Mode</span>
+    </div>
+    <h1>Forensic Timeline</h1>
+    <div id="timeline"></div>
+
+    <!-- Include the script -->
+    <script type="text/javascript">
+        // Set the initial theme based on user's preference or default to light
+        const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', userPrefersDark ? 'dark' : 'light');
+        document.getElementById('theme-switch').checked = userPrefersDark;
+        document.getElementById('theme-label').innerText = userPrefersDark ? 'Dark Mode' : 'Light Mode';
+
+        // Theme toggle functionality
+        const themeSwitch = document.getElementById('theme-switch');
+        const themeLabel = document.getElementById('theme-label');
+
+        themeSwitch.addEventListener('change', function() {
+            if (this.checked) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeLabel.innerText = 'Dark Mode';
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                themeLabel.innerText = 'Light Mode';
+            }
+        });
+
+        // Load the JSON data
+        d3.json('fileEvents.json').then(data => {
+            // Process data to extract events with timestamps
+            let events = [];
+
+            data.forEach(file => {
+                // Parse relevant dates
+                const creationDate = new Date(file.CreationDate);
+                const modifiedDate = new Date(file.LastModifiedDate);
+                const accessedDate = new Date(file.LastAccessedDate);
+
+                // Add events with type and timestamp
+                events.push({
+                    fileName: file.Name,
+                    eventType: 'Created',
+                    timestamp: creationDate,
+                    owner: file.Owner
+                });
+
+                events.push({
+                    fileName: file.Name,
+                    eventType: 'Last Modified',
+                    timestamp: modifiedDate,
+                    owner: file.Owner
+                });
+
+                events.push({
+                    fileName: file.Name,
+                    eventType: 'Last Accessed',
+                    timestamp: accessedDate,
+                    owner: file.Owner
+                });
+
+                // Process custom events
+                file.Events.forEach(ev => {
+                    // Example: "File processed at 9/19/2024 12:09:18 PM"
+                    const processedMatch = ev.match(/File processed at (.+)/);
+                    if (processedMatch) {
+                        const processedDate = new Date(processedMatch[1]);
+                        events.push({
+                            fileName: file.Name,
+                            eventType: 'Processed',
+                            timestamp: processedDate,
+                            owner: file.Owner
+                        });
+                    }
+
+                    // Example: "Owner retrieved: AzureAD\TylerMaginnis"
+                    const ownerMatch = ev.match(/Owner retrieved: (.+)/);
+                    if (ownerMatch) {
+                        events.push({
+                            fileName: file.Name,
+                            eventType: 'Owner Retrieved',
+                            timestamp: null, // No timestamp provided
+                            owner: ownerMatch[1]
+                        });
+                    }
+                });
+            });
+
+            // Filter out events without timestamps for the timeline
+            const timelineEvents = events.filter(ev => ev.timestamp !== null);
+
+            // Sort events by timestamp
+            timelineEvents.sort((a, b) => a.timestamp - b.timestamp);
+
+            // Set dimensions and margins
+            const margin = {top: 50, right: 50, bottom: 50, left: 100},
+                width = document.getElementById('timeline').clientWidth - margin.left - margin.right,
+                height = 600 - margin.top - margin.bottom;
+
+            // Append SVG
+            const svg = d3.select('#timeline')
+                        .append('svg')
+                        .attr('width', width + margin.left + margin.right)
+                        .attr('height', height + margin.top + margin.bottom)
+                        .append('g')
+                        .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // Set up scales
+            const x = d3.scaleTime()
+                        .domain(d3.extent(timelineEvents, d => d.timestamp))
+                        .range([0, width]);
+
+            const y = d3.scaleBand()
+                        .domain(timelineEvents.map(d => d.fileName))
+                        .range([0, height])
+                        .padding(0.1);
+
+            // Define color scale for event types
+            const eventTypes = Array.from(new Set(timelineEvents.map(d => d.eventType)));
+            const color = d3.scaleOrdinal()
+                            .domain(eventTypes)
+                            .range(d3.schemeSet2); // Colorblind-friendly palette
+
+            // Add X axis
+            const xAxis = d3.axisBottom(x).ticks(10);
+            svg.append('g')
+            .attr('transform', `translate(0, ${height})`)
+            .call(xAxis);
+
+            // Add Y axis
+            const yAxis = d3.axisLeft(y);
+            svg.append('g')
+            .call(yAxis);
+
+            // Add tooltip
+            const tooltip = d3.select('body').append('div')
+                            .attr('class', 'tooltip')
+                            .style('position', 'absolute')
+                            .style('background', 'rgba(0,0,0,0.7)')
+                            .style('color', '#fff')
+                            .style('padding', '8px')
+                            .style('border-radius', '4px')
+                            .style('pointer-events', 'none')
+                            .style('opacity', 0);
+
+            // Add events as circles
+            svg.selectAll('circle')
+            .data(timelineEvents)
+            .enter()
+            .append('circle')
+            .attr('cx', d => x(d.timestamp))
+            .attr('cy', d => y(d.fileName) + y.bandwidth() / 2)
+            .attr('r', 6)
+            .attr('fill', d => color(d.eventType))
+            .on('mouseover', (event, d) => {
+                tooltip.transition().duration(200).style('opacity', 0.9);
+                tooltip.html(`<strong>File:</strong> ${d.fileName}<br>
+                                <strong>Event:</strong> ${d.eventType}<br>
+                                <strong>Time:</strong> ${d.timestamp.toLocaleString()}<br>
+                                <strong>Owner:</strong> ${d.owner}`)
+                        .style('left', (event.pageX + 10) + 'px')
+                        .style('top', (event.pageY - 28) + 'px');
+            })
+            .on('mouseout', () => {
+                tooltip.transition().duration(500).style('opacity', 0);
+            });
+
+            // Add legend
+            const legend = svg.selectAll(".legend")
+                            .data(eventTypes)
+                            .enter().append("g")
+                            .attr("class", "legend")
+                            .attr("transform", (d, i) => `translate(0,${i * 20})`);
+
+            legend.append("rect")
+                .attr("x", width - 18)
+                .attr("width", 18)
+                .attr("height", 18)
+                .style("fill", color);
+
+            legend.append("text")
+                .attr("x", width - 24)
+                .attr("y", 9)
+                .attr("dy", ".35em")
+                .style("text-anchor", "end")
+                .text(d => d);
+        }).catch(error => {
+            console.error('Error loading the JSON data:', error);
+        });
+
+
+    </script>
+</body>
+</html>
