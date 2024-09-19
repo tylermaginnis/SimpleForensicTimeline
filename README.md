@@ -99,10 +99,5 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Acknowledgments
 
-- [D3.js](https://d3js.org/) for data visualization.
 - [ASP.NET Core](https://dotnet.microsoft.com/apps/aspnet) for backend development.
 - [Normalize.css](https://necolas.github.io/normalize.css/) for consistent styling across browsers.
-
-## Contact
-
-For any inquiries, please contact [Your Name](mailto:your.email@example.com).
